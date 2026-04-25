@@ -1,5 +1,12 @@
 [
   {
+    "id": "cookie-clicker",
+    "title": "Cookie Clicker",
+    "description": "Bake cookies to earn Bits. The ultimate nexus idle utility.",
+    "category": "Retro",
+    "thumbnail": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=300&fit=crop"
+  },
+  {
     "id": "2048",
     "title": "2048",
     "description": "Join the numbers and get to the 2048 tile!",
