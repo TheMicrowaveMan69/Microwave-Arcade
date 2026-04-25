@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand: #00FF00;
+  --color-brand-dim: rgba(0, 255, 0, 0.1);
+  --color-surface: #0A0A0A;
+  --color-surface-soft: #121212;
+  --color-border: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-white selection:bg-brand selection:text-black;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .bento-card {
+    @apply relative bg-surface-soft border border-border rounded-2xl overflow-hidden 
+           transition-all duration-300 hover:border-brand/40 hover:bg-white/[0.02];
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-xl bg-surface/80 border-b border-white/[0.05];
+  }
+  
+  .tech-label {
+    @apply font-mono text-[10px] uppercase tracking-[0.2em] text-white/40;
+  }
+}

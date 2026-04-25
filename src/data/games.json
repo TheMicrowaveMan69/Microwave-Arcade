@@ -1,0 +1,50 @@
+[
+  {
+    "id": "2048",
+    "title": "2048",
+    "description": "Join the numbers and get to the 2048 tile!",
+    "url": "https://play2048.co/",
+    "category": "Puzzle",
+    "thumbnail": "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=400&h=300&fit=crop"
+  },
+  {
+    "id": "snake",
+    "title": "Snake",
+    "description": "The classic arcade game. Don't hit the walls or yourself!",
+    "url": "https://playsnake.org/",
+    "category": "Arcade",
+    "thumbnail": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop"
+  },
+  {
+    "id": "tetris",
+    "title": "Tetris",
+    "description": "Stack the blocks and clear the lines.",
+    "url": "https://tetris.com/play-tetris",
+    "category": "Arcade",
+    "thumbnail": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop"
+  },
+  {
+    "id": "flappy-bird",
+    "title": "Flappy Bird",
+    "description": "Flap your wings and fly through the pipes.",
+    "url": "https://flappybird.io/",
+    "category": "Arcade",
+    "thumbnail": "https://images.unsplash.com/photo-1551103782-8ab07afd45c1?w=400&h=300&fit=crop"
+  },
+  {
+    "id": "minesweeper",
+    "title": "Minesweeper",
+    "description": "Clear the board without hitting any mines.",
+    "url": "https://minesweeper.online/game/1014167",
+    "category": "Strategy",
+    "thumbnail": "https://images.unsplash.com/photo-1580234811497-9df7fd2f357e?w=400&h=300&fit=crop"
+  },
+  {
+    "id": "chess",
+    "title": "Lichess",
+    "description": "Play chess online with friends or against the computer.",
+    "url": "https://lichess.org/tv",
+    "category": "Strategy",
+    "thumbnail": "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=400&h=300&fit=crop"
+  }
+]
