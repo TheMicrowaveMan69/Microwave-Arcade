@@ -16,27 +16,16 @@ import {
 } from 'lucide-react';
 import gamesData from './data/games.json';
 
-interface Game {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  category: string;
-  thumbnail: string;
-  isFeatured?: boolean;
-  size?: 'small' | 'medium' | 'large';
-}
-
 const CATEGORIES = ['All', 'Arcade', 'Puzzle', 'Strategy', 'Retro', 'Action'];
 
 export default function App() {
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedGame, setSelectedGame] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
   // Enhance game data with layout properties for bento effect
   const displayGames = useMemo(() => {
-    return (gamesData as Game[]).map((game, index) => ({
+    return gamesData.map((game, index) => ({
       ...game,
       // Assign sizes for bento effect based on ID or index
       size: (index === 0 || index === 5) ? 'large' : (index % 3 === 1 ? 'medium' : 'small')
