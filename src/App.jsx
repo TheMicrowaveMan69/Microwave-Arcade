@@ -25,6 +25,7 @@ export default function App() {
 
   // Enhance game data with layout properties for bento effect
   const displayGames = useMemo(() => {
+    if (!gamesData || !Array.isArray(gamesData)) return [];
     return gamesData.map((game, index) => ({
       ...game,
       // Assign sizes for bento effect based on ID or index
