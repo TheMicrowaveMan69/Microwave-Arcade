@@ -1,58 +1,18 @@
 [
   {
+    "id": "veck-io",
+    "title": "Veck.io",
+    "category": "Shooting",
+    "description": "Veck.io is a 3D multiplayer FPS IO shooting game with nonstop action among players across the globe.",
+    "thumbnail": "https://imgs.crazygames.com/veck-io_16x9/20251204101357/veck-io_16x9-cover?metadata=none&quality=100&width=1200&height=630&fit=crop",
+    "url": "/veck.html"
+  },
+  {
     "id": "brotato",
     "title": "Brotato",
     "category": "Action",
-    "description": "A top-down arena shooter roguelite where you play a potato wielding up to 6 weapons at a time to fight off swarms of aliens.",
-    "thumbnail": "https://i.ibb.co/27rYfKVy/images.jpg",
+    "description": "Brotato is a top-down arena shooter roguelite where you play a potato wielding up to 6 weapons at a time to fight off swarms of aliens.",
+    "thumbnail": "https://i.ibb.co/Tq2c5S4C/images.jpg",
     "url": "/brotato.html"
-  },
-  {
-    "id": "tetris",
-    "title": "Retro Block",
-    "category": "Puzzle",
-    "description": "The classic block-stacking puzzle game. Line them up to clear space and score big.",
-    "thumbnail": "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=2070&auto=format&fit=crop",
-    "url": "https://tetris.com/play-tetris"
-  },
-  {
-    "id": "pacman",
-    "title": "Neon Ghost",
-    "category": "Arcade",
-    "description": "Navigate the maze, eat the dots, and avoid the colorful ghosts in this neon-infused update.",
-    "thumbnail": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop",
-    "url": "https://www.google.com/logos/2010/pacman10-i.html"
-  },
-  {
-    "id": "space-invaders",
-    "title": "Galaxy Defense",
-    "category": "Action",
-    "description": "Defend the planet from waves of advancing alien invaders. Watch your barriers!",
-    "thumbnail": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?q=80&w=2070&auto=format&fit=crop",
-    "url": "https://www.freeinvaders.org/"
-  },
-  {
-    "id": "snake",
-    "title": "Cyber Snake",
-    "category": "Retro",
-    "description": "Grow your snake by eating data packets, but don't hit the walls or your own tail.",
-    "thumbnail": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop",
-    "url": "https://www.google.com/search?q=play+snake"
-  },
-  {
-    "id": "strategy-chess",
-    "title": "Grandmaster AI",
-    "category": "Strategy",
-    "description": "Test your intellect against a high-performance chess AI in a minimalist digital environment.",
-    "thumbnail": "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?q=80&w=2069&auto=format&fit=crop",
-    "url": "https://lichess.org/tv"
-  },
-  {
-    "id": "adventure-capitalist",
-    "title": "Adventure Capitalist",
-    "category": "Simulation",
-    "description": "The world's greatest capitalism simulator! Start with a single lemonade stand and build a global empire.",
-    "thumbnail": "https://i.ibb.co/Lzr6vskL/adventure-capitalist.jpg",
-    "url": "/adventure-capitalist.html"
   }
 ]

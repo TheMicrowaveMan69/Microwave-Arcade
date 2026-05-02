@@ -20,6 +20,7 @@ import {
   Clock,
   Coins,
   Zap,
+  Maximize,
   MessageSquare
 } from 'lucide-react';
 import gamesData from './data/games.json';
@@ -175,6 +176,19 @@ export default function App() {
       [game.id]: (prev[game.id] || 0) + 1
     }));
     setSelectedGame(game);
+  };
+
+  const toggleFullscreen = () => {
+    const iframe = document.getElementById('game-iframe');
+    if (!iframe) return;
+
+    if (iframe.requestFullscreen) {
+      iframe.requestFullscreen();
+    } else if (iframe.webkitRequestFullscreen) {
+      iframe.webkitRequestFullscreen();
+    } else if (iframe.msRequestFullscreen) {
+      iframe.msRequestFullscreen();
+    }
   };
 
   return (
@@ -730,15 +744,34 @@ export default function App() {
               className="relative w-full h-full flex flex-col"
             >
               <div className="h-20 glass-effect flex items-center justify-between px-8">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setSelectedGame(null)}
-                    className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
+                    className="p-3 bg-brand/10 border border-brand/20 rounded-xl hover:bg-brand/20 text-brand transition-colors flex items-center gap-2 group"
+                    title="Leave Game"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                   </button>
-                  <div>
-                    <h2 className="font-display text-xl font-bold uppercase tracking-tight italic">{selectedGame.title}</h2>
+                  <button 
+                    onClick={toggleFullscreen}
+                    className="p-3 bg-brand/10 border border-brand/20 rounded-xl hover:bg-brand/20 text-brand transition-colors flex items-center gap-2 group"
+                    title="Fullscreen"
+                  >
+                    <Maximize className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </button>
+                  <div className="flex items-center gap-4 ml-2">
+                    {selectedGame.thumbnail && (
+                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shadow-2xl flex-shrink-0">
+                        <img 
+                          src={selectedGame.thumbnail} 
+                          alt={selectedGame.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="font-display text-xl font-bold uppercase tracking-tight italic">{selectedGame.title}</h2>
+                    </div>
                   </div>
                 </div>
 
@@ -746,6 +779,7 @@ export default function App() {
                   <button 
                     onClick={() => setSelectedGame(null)}
                     className="p-3 bg-brand/10 border border-brand/20 rounded-xl hover:bg-brand/20 text-brand transition-colors group"
+                    title="Close"
                   >
                     <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                   </button>
@@ -754,6 +788,7 @@ export default function App() {
               
               <div className="flex-1 bg-black relative">
                 <iframe 
+                  id="game-iframe"
                   src={selectedGame.url} 
                   className="w-full h-full border-none shadow-[0_0_100px_rgba(0,0,0,0.5)]"
                   title={selectedGame.title}
