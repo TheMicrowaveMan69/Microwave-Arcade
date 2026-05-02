@@ -1,5 +1,13 @@
 [
   {
+    "id": "ultrakill",
+    "title": "ULTRAKILL",
+    "category": "Action",
+    "description": "ULTRAKILL is a fast-paced ultraviolent retro FPS, combining the skill-based style scoring from character action games.",
+    "thumbnail": "https://i.ibb.co/3ykpLpS7/ultrakill.webp",
+    "url": "/ultrakill/index.html"
+  },
+  {
     "id": "happy-wheels",
     "title": "Happy Wheels",
     "category": "Action",
