@@ -743,25 +743,27 @@ export default function App() {
               layoutId={`game-${selectedGame.id}`}
               className="relative w-full h-full flex flex-col"
             >
-              <div className="h-20 glass-effect flex items-center justify-between px-8">
+              <div className="h-20 bg-neutral-900 flex items-center justify-between px-8 border-b border-white/10 shadow-2xl relative z-50">
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setSelectedGame(null)}
-                    className="p-3 bg-brand/10 border border-brand/20 rounded-xl hover:bg-brand/20 text-brand transition-colors flex items-center gap-2 group"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-brand/20 border border-brand/40 rounded-xl hover:bg-brand/30 text-brand transition-all group font-display font-bold uppercase text-xs tracking-wider"
                     title="Leave Game"
                   >
                     <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <span className="hidden sm:inline">Back</span>
                   </button>
                   <button 
                     onClick={toggleFullscreen}
-                    className="p-3 bg-brand/10 border border-brand/20 rounded-xl hover:bg-brand/20 text-brand transition-colors flex items-center gap-2 group"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-brand/20 border border-brand/40 rounded-xl hover:bg-brand/30 text-brand transition-all group font-display font-bold uppercase text-xs tracking-wider"
                     title="Fullscreen"
                   >
                     <Maximize className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span>Fullscreen</span>
                   </button>
-                  <div className="flex items-center gap-4 ml-2">
+                  <div className="flex items-center gap-4 ml-2 border-l border-white/10 pl-4">
                     {selectedGame.thumbnail && (
-                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shadow-2xl flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/20 shadow-2xl flex-shrink-0 hidden md:block">
                         <img 
                           src={selectedGame.thumbnail} 
                           alt={selectedGame.title}
@@ -770,7 +772,7 @@ export default function App() {
                       </div>
                     )}
                     <div>
-                      <h2 className="font-display text-xl font-bold uppercase tracking-tight italic">{selectedGame.title}</h2>
+                      <h2 className="font-display text-xl md:text-2xl font-black uppercase tracking-tighter italic text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{selectedGame.title}</h2>
                     </div>
                   </div>
                 </div>
@@ -778,10 +780,10 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setSelectedGame(null)}
-                    className="p-3 bg-brand/10 border border-brand/20 rounded-xl hover:bg-brand/20 text-brand transition-colors group"
+                    className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors group"
                     title="Close"
                   >
-                    <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                    <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
                   </button>
                 </div>
               </div>
