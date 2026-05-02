@@ -4,7 +4,13 @@ import { Send, Bot, User, Loader2, Trash2, Sparkles, ChevronDown, BrainCircuit }
 import { GoogleGenAI } from "@google/genai";
 
 // Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'undefined') {
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const MODELS = [
   { id: 'gemini', name: 'Gemini 3 Flash', provider: 'Google', icon: Sparkles, color: 'text-blue-400' },
@@ -43,6 +49,10 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
+      const ai = getAiClient();
+      if (!ai) {
+        throw new Error('AI service is currently unavailable. Please check your API configuration or set up the GEMINI_API_KEY environment variable.');
+      }
       const modelIdentifier = "gemini-3-flash-preview"; 
       
       const response = await ai.models.generateContent({
