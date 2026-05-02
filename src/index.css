@@ -28,6 +28,7 @@
   --theme-font-display: "Space Grotesk";
   --theme-radius: 1rem;
   --theme-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+  --theme-case: none;
 }
 
 [data-theme='encrypted'] {
@@ -40,14 +41,81 @@
   --theme-radius: 1rem;
 }
 
+[data-theme='legacy'] {
+  --theme-brand: #1a73e8;
+  --theme-brand-dim: rgba(26, 115, 232, 0.1);
+  --theme-surface: #f1f3f4;
+  --theme-surface-soft: #ffffff;
+  --theme-border: rgba(0, 0, 0, 0.1);
+  --theme-font-display: "Inter";
+  --theme-radius: 8px;
+}
+
+[data-theme='legacy'] .tech-label,
+[data-theme='legacy'] h1,
+[data-theme='legacy'] h2,
+[data-theme='legacy'] h3,
+[data-theme='legacy'] h4,
+[data-theme='legacy'] p,
+[data-theme='legacy'] span,
+[data-theme='legacy'] div:not(.bg-brand):not(.bg-white\/5) {
+  color: #202124 !important;
+}
+
+[data-theme='legacy'] .text-white\/40,
+[data-theme='legacy'] .text-white\/30,
+[data-theme='legacy'] .text-white\/20,
+[data-theme='legacy'] .text-white\/10 {
+  color: #5f6368 !important;
+  opacity: 1 !important;
+}
+
+[data-theme='legacy'] .text-brand {
+  color: #1a73e8 !important;
+}
+
+[data-theme='legacy'] .bg-surface-soft,
+[data-theme='legacy'] .bento-card,
+[data-theme='legacy'] .glass-effect,
+[data-theme='legacy'] .bg-white\/\[0\.03\],
+[data-theme='legacy'] .bg-white\/5 {
+  background-color: #ffffff !important;
+}
+
+[data-theme='legacy'] .glass-effect {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='legacy'] .bento-card {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24) !important;
+}
+
+[data-theme='legacy'] .tech-grid-pattern,
+[data-theme='legacy'] .noise-overlay,
+[data-theme='legacy'] .scanlines {
+  visibility: hidden !important;
+}
+
+[data-theme='legacy'] input {
+  color: #202124 !important;
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+}
+
+[data-theme='legacy'] .bg-brand {
+  background-color: #1a73e8 !important;
+  color: #ffffff !important;
+}
+
 [data-theme='bloodline'] {
   --theme-brand: #FF1A1A;
   --theme-brand-dim: rgba(255, 26, 26, 0.1);
   --theme-surface: #0F0505;
   --theme-surface-soft: #1A0A0A;
   --theme-border: rgba(255, 26, 26, 0.5);
-  --theme-font-display: "Syncopate";
-  --theme-radius: 0px; /* Sharp corners */
+  --theme-font-display: "Outfit";
+  --theme-radius: 4px;
   --theme-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
 }
 
@@ -302,10 +370,11 @@
     100% { transform: translate(0) }
   }
 
-  [data-theme='bloodline'] .font-display {
+  /* [data-theme='bloodline'] .font-display animation removed to avoid 'glitchy' look */
+  /* [data-theme='bloodline'] .font-display {
     animation: glitch 0.3s infinite;
     text-shadow: 2px 0 #FF1A1A, -2px 0 #00FFFF;
-  }
+  } */
 
   .bento-card {
     border-radius: var(--theme-roundness);
