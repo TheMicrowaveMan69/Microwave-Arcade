@@ -5,8 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity WebGL Player | AdVenture Capitalist!</title>
     <base href="https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/">
-    <link rel="stylesheet" href="TemplateData/style.css">
-    <script src="TemplateData/UnityProgress.js"></script>
+    <link rel="stylesheet" href="https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/TemplateData/style.css">
+    <script src="https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/TemplateData/UnityProgress.js"></script>
     <style>
         html, body {
             width: 100%;
@@ -47,8 +47,8 @@
     <script type='text/javascript'>
         var Module = {
             TOTAL_MEMORY: 201326592,
-            filePackagePrefixURL: "Release/",
-            memoryInitializerPrefixURL: "Release/",
+            filePackagePrefixURL: "https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/Release/",
+            memoryInitializerPrefixURL: "https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/Release/",
             preRun: [],
             postRun: [],
             print: (function() {
@@ -87,16 +87,16 @@
         };
         Module.setStatus('Downloading (0.0/1)');
     </script>
-    <script src="Release/UnityConfig.js"></script>
-    <script src="Release/fileloader.js"></script>
+    <script src="https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/Release/UnityConfig.js"></script>
+    <script src="https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/Release/fileloader.js"></script>
     <script>
         if (!(!Math.fround)) {
             var script = document.createElement('script');
-            script.src = "Release/webgl.js";
+            script.src = "https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/Release/webgl.js";
             document.body.appendChild(script);
         } else {
             var codeXHR = new XMLHttpRequest();
-            codeXHR.open('GET', 'Release/webgl.js', true);
+            codeXHR.open('GET', 'https://rawcdn.githack.com/selenite-cc/selenite-old/9c743188888af0986c8c7b293dbac8f9e421a4ee/adventure-capitalist/Release/webgl.js', true);
             codeXHR.onload = function() {
                 var code = codeXHR.responseText;
                 var blob = new Blob([code], { type: 'text/javascript' });
