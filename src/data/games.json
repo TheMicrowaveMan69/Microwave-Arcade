@@ -1,11 +1,11 @@
 [
   {
-    "id": "veck-io",
-    "title": "Veck.io",
-    "category": "Shooting",
-    "description": "Veck.io is a 3D multiplayer FPS IO shooting game with nonstop action among players across the globe.",
-    "thumbnail": "https://i.ibb.co/C3yS1JbC/veck-io.jpg",
-    "url": "/veck/index.html"
+    "id": "happy-wheels",
+    "title": "Happy Wheels",
+    "category": "Action",
+    "description": "Happy Wheels is a side-scrolling, physics-based, obstacle course game with over a billion plays online.",
+    "thumbnail": "https://i.ibb.co/68vD188P/Happy-Wheels-icon.webp",
+    "url": "/happy-wheels/index.html"
   },
   {
     "id": "brotato",
