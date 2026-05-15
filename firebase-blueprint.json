@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user progress, themes, and settings.",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "ownedThemes": { "type": "array", "items": { "type": "string" } },
+        "customThemes": { "type": "array" },
+        "playCounts": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "ownedThemes", "customThemes", "playCounts"]
+    },
+    "PublicTheme": {
+      "title": "Public Theme",
+      "description": "Themes published by users for others to use.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "type": "string" },
+        "desc": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorId", "authorName", "name", "color", "desc"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User specific data."
+    },
+    "/themes/{themeId}": {
+      "schema": "PublicTheme",
+      "description": "Public community themes."
+    }
+  }
+}

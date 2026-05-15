@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User Profile Rules
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.username is string && data.username.size() > 0 && data.username.size() < 50 &&
+               data.ownedThemes is list &&
+               data.customThemes is list &&
+               data.playCounts is map;
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['ownedThemes', 'customThemes', 'playCounts', 'updatedAt', 'username'])
+      );
+    }
+
+    // Public Themes Rules
+    match /themes/{themeId} {
+      function isValidTheme(data) {
+        return data.id is string &&
+               data.authorId == request.auth.uid &&
+               data.authorName is string &&
+               data.name is string && data.name.size() > 0 &&
+               data.color is string &&
+               data.desc is string;
+      }
+
+      allow list: if isSignedIn();
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && isValidTheme(incoming()) && isValidId(themeId);
+      allow delete: if isSignedIn() && existing().authorId == request.auth.uid;
+    }
+  }
+}

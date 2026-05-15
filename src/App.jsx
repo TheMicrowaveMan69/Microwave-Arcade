@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -19,11 +19,18 @@ import {
   Palette,
   Zap,
   Maximize,
-  MessageSquare
+  MessageSquare,
+  User,
+  LogOut,
+  ChevronRight
 } from 'lucide-react';
 import gamesData from './data/games.json';
 import ChatInterface from './components/ChatInterface';
 import ThemeEditor from './components/ThemeEditor';
+import AuthModal from './components/AuthModal';
+import { auth, db } from './lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, collection, query, orderBy, limit } from 'firebase/firestore';
 
 const CATEGORIES = ['All', 'Arcade', 'Puzzle', 'Strategy', 'Retro', 'Action'];
 
@@ -61,6 +68,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [showSettings, setShowSettings] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+
   const [ownedThemes, setOwnedThemes] = useState(() => {
     const saved = localStorage.getItem('microwave-owned-themes');
     const themes = saved ? JSON.parse(saved) : ['legacy'];
@@ -80,18 +91,80 @@ export default function App() {
     return localStorage.getItem('microwave-theme') || 'legacy';
   });
 
-  // Save changes
+  const [communityThemes, setCommunityThemes] = useState([]);
+
+  // Fetch Community Themes
+  useEffect(() => {
+    const q = query(collection(db, 'themes'), orderBy('createdAt', 'desc'), limit(50));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const themes = snapshot.docs.map(doc => doc.data());
+      setCommunityThemes(themes);
+    }, (error) => {
+      console.error('Snapshot error:', error);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) {
+        setUserData(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Data Sync Listener
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setUserData(data);
+        if (data.ownedThemes) setOwnedThemes(data.ownedThemes);
+        if (data.customThemes) setCustomThemes(data.customThemes);
+        if (data.playCounts) setPlayCounts(data.playCounts);
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Push to Cloud helper
+  const syncToCloud = useCallback(async (newData) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'users', user.uid), {
+        ...newData,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
+  }, [user]);
+
+  // Local Save & Sync Logic
   useEffect(() => {
     localStorage.setItem('microwave-owned-themes', JSON.stringify(ownedThemes));
-  }, [ownedThemes]);
+    if (user && userData && JSON.stringify(userData.ownedThemes) !== JSON.stringify(ownedThemes)) {
+      syncToCloud({ ownedThemes });
+    }
+  }, [ownedThemes, user, userData, syncToCloud]);
 
   useEffect(() => {
     localStorage.setItem('microwave-custom-themes', JSON.stringify(customThemes));
-  }, [customThemes]);
+    if (user && userData && JSON.stringify(userData.customThemes) !== JSON.stringify(customThemes)) {
+      syncToCloud({ customThemes });
+    }
+  }, [customThemes, user, userData, syncToCloud]);
 
   useEffect(() => {
     localStorage.setItem('microwave-play-counts', JSON.stringify(playCounts));
-  }, [playCounts]);
+    if (user && userData && JSON.stringify(userData.playCounts) !== JSON.stringify(playCounts)) {
+      syncToCloud({ playCounts });
+    }
+  }, [playCounts, user, userData, syncToCloud]);
 
   // Apply theme to document
   useEffect(() => {
@@ -224,6 +297,28 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            {user ? (
+               <div 
+                 className="hidden lg:flex items-center gap-3 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl cursor-default"
+               >
+                 <div className="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center border border-brand/20">
+                   <User className="w-4 h-4 text-brand" />
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-none">Logged In</span>
+                   <span className="text-[11px] font-bold text-white tracking-tight leading-loose uppercase">{userData?.username || user.email.split('@')[0]}</span>
+                 </div>
+               </div>
+            ) : (
+              <button 
+                onClick={() => setShowAuth(true)}
+                className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-brand text-black rounded-xl hover:scale-[1.02] transition-all font-black uppercase text-[10px] tracking-widest"
+              >
+                <User className="w-4 h-4" />
+                Login
+              </button>
+            )}
+
             <button 
               onClick={() => setShowSettings(true)}
               className="p-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all group shadow-lg active:scale-95 flex items-center justify-center"
@@ -439,8 +534,8 @@ export default function App() {
                     <ShoppingCart className="w-6 h-6 text-brand" />
                   </div>
                   <div>
-                    <h2 className="font-display text-4xl font-black uppercase tracking-tighter italic">MARKET & EDITOR</h2>
-                    <p className="text-xs font-mono text-white/40 uppercase tracking-widest leading-none">Accessing specialized interface styles</p>
+                    <h2 className="font-display text-4xl font-black uppercase tracking-tighter italic">MARKET & THEMES</h2>
+                    <p className="text-xs font-mono text-white/40 uppercase tracking-widest leading-none">Browse or create custom styles</p>
                   </div>
                 </div>
                 
@@ -469,7 +564,7 @@ export default function App() {
                 }} />
               ) : activeCategory === 'COMMUNITY' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {customThemes.length === 0 ? (
+                  {communityThemes.length === 0 ? (
                     <div className="col-span-full py-32 flex flex-col items-center justify-center text-center bento-card border-dashed">
                       <Palette className="w-12 h-12 text-white/10 mb-4" />
                       <p className="text-xs font-mono text-white/20 uppercase tracking-[0.2em]">No community styles detected</p>
@@ -477,18 +572,24 @@ export default function App() {
                         onClick={() => setActiveCategory('EDITOR')}
                         className="mt-6 text-brand text-[10px] font-bold uppercase tracking-widest hover:underline"
                       >
-                        Launch Architect
+                        Create Theme
                       </button>
                     </div>
                   ) : (
-                    customThemes.map((theme, i) => (
+                    communityThemes.map((theme, i) => (
                       <motion.div
                         key={theme.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.05 }}
                         className={`group relative flex flex-col p-8 bg-white/[0.03] border border-white/10 rounded-3xl hover:border-brand/40 transition-all cursor-pointer overflow-hidden ${currentTheme === theme.id ? 'border-brand/40 ring-1 ring-brand/20' : ''}`}
-                        onClick={() => setCurrentTheme(theme.id)}
+                        onClick={() => {
+                          if (!ownedThemes.includes(theme.id)) {
+                            setOwnedThemes(prev => [...prev, theme.id]);
+                            setCustomThemes(prev => [theme, ...prev]);
+                          }
+                          setCurrentTheme(theme.id);
+                        }}
                       >
                          <div className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 -translate-y-1/2 translate-x-1/2 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: theme.color }} />
                          
@@ -498,18 +599,23 @@ export default function App() {
                              </div>
   
                              <div className="mb-6">
-                                <h3 className="font-display font-black uppercase tracking-tight text-xl mb-2">{theme.name}</h3>
+                                <div className="flex items-center justify-between gap-4">
+                                  <h3 className="font-display font-black uppercase tracking-tight text-xl mb-2 truncate">{theme.name}</h3>
+                                  <span className="text-[8px] font-mono text-brand/60 uppercase">by {theme.authorName}</span>
+                                </div>
                                 <p className="text-[10px] text-white/40 leading-relaxed italic line-clamp-2">{theme.desc}</p>
                              </div>
                             
                             <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                               <span className="text-[9px] font-mono text-brand font-bold uppercase tracking-[0.2em]">STATION_LOADED</span>
+                               <span className="text-[9px] font-mono text-brand font-bold uppercase tracking-[0.2em]">
+                                 {ownedThemes.includes(theme.id) ? 'DOWNLOADED' : 'NEW THEME'}
+                               </span>
                                <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all leading-none ${
                                  currentTheme === theme.id 
                                    ? 'bg-brand text-black' 
                                    : 'bg-white/5 text-white/40 group-hover:text-white'
                                }`}>
-                                  {currentTheme === theme.id ? 'ACTIVE' : 'SYNC'}
+                                  {currentTheme === theme.id ? 'ACTIVE' : ownedThemes.includes(theme.id) ? 'EQUIP' : 'SYNC'}
                                </div>
                             </div>
                          </div>
@@ -595,6 +701,19 @@ export default function App() {
          </div>
       </footer>
 
+      {/* Auth Modal */}
+      <AnimatePresence>
+        {showAuth && (
+          <AuthModal 
+            onClose={() => setShowAuth(false)} 
+            onAuthSuccess={(u) => {
+              setUser(u);
+              setShowAuth(false);
+            }} 
+          />
+        )}
+      </AnimatePresence>
+
       {/* Settings Modal */}
       <AnimatePresence>
         {showSettings && (
@@ -615,12 +734,36 @@ export default function App() {
               <div className="flex h-[70vh]">
                 {/* Sidebar */}
                 <div className="w-1/3 border-r border-white/[0.05] p-8 hidden md:block">
-                  <div className="flex items-center gap-3 mb-10">
-                    <div className="w-8 h-8 bg-brand/10 flex items-center justify-center rounded-lg border border-brand/20">
-                      <Settings className="w-4 h-4 text-brand" />
+                  <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-brand/10 flex items-center justify-center rounded-lg border border-brand/20">
+                        <Settings className="w-4 h-4 text-brand" />
+                      </div>
+                      <span className="font-display font-bold uppercase tracking-tight">SETTINGS</span>
                     </div>
-                    <span className="font-display font-bold uppercase tracking-tight">SETTINGS</span>
                   </div>
+
+                  <div className="space-y-2">
+                     <button className="w-full flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-xl text-brand text-[10px] font-bold uppercase tracking-widest">
+                        System Configuration
+                        <ChevronRight className="w-3 h-3" />
+                     </button>
+                  </div>
+
+                  {user && (
+                    <div className="mt-auto pt-8">
+                       <button 
+                        onClick={() => {
+                          signOut(auth);
+                          setShowSettings(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 hover:bg-red-500/20 transition-all text-[10px] font-bold uppercase tracking-widest"
+                       >
+                         <LogOut className="w-4 h-4" />
+                         Logout
+                       </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
