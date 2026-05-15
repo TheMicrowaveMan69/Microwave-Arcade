@@ -69,10 +69,21 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
         onAuthSuccess(userCredential.user);
       } else {
         // Sign up
+        
+        // 1. Check if username is taken
+        const usernameRef = doc(db, 'usernames', username.toLowerCase());
+        const usernameSnap = await getDoc(usernameRef);
+        
+        if (usernameSnap.exists()) {
+          setError('Username is already taken');
+          setLoading(false);
+          return;
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Create initial user document
+        // 2. Claim username and create profile
         const userDoc = {
           username: username,
           ownedThemes: ['legacy'],
@@ -82,6 +93,9 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
         };
 
         try {
+          // Claim username
+          await setDoc(usernameRef, { uid: user.uid, createdAt: serverTimestamp() });
+          // Create profile
           await setDoc(doc(db, 'users', user.uid), userDoc);
         } catch (err) {
           handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);

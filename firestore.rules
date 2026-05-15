@@ -19,7 +19,8 @@ service cloud.firestore {
         return data.username is string && data.username.size() > 0 && data.username.size() < 50 &&
                data.ownedThemes is list &&
                data.customThemes is list &&
-               data.playCounts is map;
+               data.playCounts is map &&
+               (data.updatedAt == request.time || data.updatedAt is timestamp);
       }
 
       allow get: if isOwner(userId);
@@ -40,10 +41,16 @@ service cloud.firestore {
                data.desc is string;
       }
 
-      allow list: if isSignedIn();
-      allow get: if isSignedIn();
+      allow list: if true;
+      allow get: if true;
       allow create: if isSignedIn() && isValidTheme(incoming()) && isValidId(themeId);
       allow delete: if isSignedIn() && existing().authorId == request.auth.uid;
+    }
+
+    // Username Availability Rules
+    match /usernames/{username} {
+      allow read: if true;
+      allow create: if isSignedIn();
     }
   }
 }
