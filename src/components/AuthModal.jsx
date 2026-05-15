@@ -7,7 +7,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { X, Lock, User, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { X, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const INTERNAL_DOMAIN = '@microwave.internal';
 
@@ -39,12 +39,24 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const validateUsername = (name) => {
+    // Only allow letters, numbers, and underscores, between 3-15 chars
+    const regex = /^[a-zA-Z0-9_]{3,15}$/;
+    return regex.test(name);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) return;
+    
+    if (!validateUsername(username)) {
+      setError('Username must be 3-15 characters and contain only letters, numbers, or underscores.');
+      return;
+    }
     
     setError('');
     setLoading(true);
@@ -150,14 +162,28 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <input 
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-sm font-mono focus:border-brand/40 outline-none transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-12 py-4 text-sm font-mono focus:border-brand/40 outline-none transition-all"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-lg transition-colors group"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-white/20 group-hover:text-white/60" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-white/20 group-hover:text-white/60" />
+                  )}
+                </button>
               </div>
+              {!isLogin && (
+                <p className="text-[10px] font-mono text-white/20 ml-1">At least 6 characters</p>
+              )}
             </div>
           </div>
 
