@@ -1,19 +1,19 @@
 [
   {
+    "id": "tabs",
+    "title": "TABS",
+    "category": "Action",
+    "description": "Totally Accurate Battle Simulator is a wacky physics-based tactics game. Experience accurate warfare through the ages.",
+    "thumbnail": "https://i.ibb.co/Mx5zpCmW/a800dc5a941af33b5f7b7371f907a0fe26f3c435e4c20f60.avif",
+    "url": "/tabs/index.html"
+  },
+  {
     "id": "ultrakill",
     "title": "ULTRAKILL",
     "category": "Action",
     "description": "ULTRAKILL is a fast-paced ultraviolent retro FPS, combining the skill-based style scoring from character action games.",
-    "thumbnail": "https://i.ibb.co/3ykpLpS7/ultrakill.webp",
+    "thumbnail": "https://i.ibb.co/Kxd7B6fD/images-1.jpg",
     "url": "/ultrakill/index.html"
-  },
-  {
-    "id": "happy-wheels",
-    "title": "Happy Wheels",
-    "category": "Action",
-    "description": "Happy Wheels is a side-scrolling, physics-based, obstacle course game with over a billion plays online.",
-    "thumbnail": "https://i.ibb.co/68vD188P/Happy-Wheels-icon.webp",
-    "url": "/happy-wheels/index.html"
   },
   {
     "id": "brotato",

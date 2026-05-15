@@ -14,18 +14,16 @@ import {
   Layers,
   Activity,
   Settings,
+  ShoppingCart,
   CircleCheck,
   Palette,
-  ShoppingCart,
-  Clock,
-  Coins,
   Zap,
   Maximize,
   MessageSquare
 } from 'lucide-react';
 import gamesData from './data/games.json';
-import BitGames from './components/BitGames';
 import ChatInterface from './components/ChatInterface';
+import ThemeEditor from './components/ThemeEditor';
 
 const CATEGORIES = ['All', 'Arcade', 'Puzzle', 'Strategy', 'Retro', 'Action'];
 
@@ -63,17 +61,15 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [showSettings, setShowSettings] = useState(false);
-  const [showShop, setShowShop] = useState(false);
-  const [showCasino, setShowCasino] = useState(false);
   const [ownedThemes, setOwnedThemes] = useState(() => {
     const saved = localStorage.getItem('microwave-owned-themes');
     const themes = saved ? JSON.parse(saved) : ['legacy'];
     if (!themes.includes('legacy')) themes.push('legacy');
     return themes;
   });
-  const [bits, setBits] = useState(() => {
-    const saved = localStorage.getItem('microwave-bits');
-    return saved ? parseInt(saved) : 500;
+  const [customThemes, setCustomThemes] = useState(() => {
+    const saved = localStorage.getItem('microwave-custom-themes');
+    return saved ? JSON.parse(saved) : [];
   });
   const [playCounts, setPlayCounts] = useState(() => {
     const saved = localStorage.getItem('microwave-play-counts');
@@ -84,70 +80,39 @@ export default function App() {
     return localStorage.getItem('microwave-theme') || 'legacy';
   });
 
-  const [shopItems, setShopItems] = useState([]);
-  const [resetTime, setResetTime] = useState(0);
-  const [timeLeft, setTimeLeft] = useState('');
-
   // Save changes
   useEffect(() => {
     localStorage.setItem('microwave-owned-themes', JSON.stringify(ownedThemes));
   }, [ownedThemes]);
 
   useEffect(() => {
-    localStorage.setItem('microwave-bits', bits.toString());
-  }, [bits]);
+    localStorage.setItem('microwave-custom-themes', JSON.stringify(customThemes));
+  }, [customThemes]);
 
   useEffect(() => {
     localStorage.setItem('microwave-play-counts', JSON.stringify(playCounts));
   }, [playCounts]);
-  useEffect(() => {
-    const ROTATION_MS = 4 * 60 * 60 * 1000;
-    
-    const refreshShop = () => {
-      const now = Date.now();
-      const lastReset = parseInt(localStorage.getItem('shop-reset-time') || '0');
-      const savedIds = localStorage.getItem('shop-items');
-      
-      if (now - lastReset > ROTATION_MS || !savedIds) {
-        // Pick 8 random themes (excluding the free legacy theme)
-        const candidates = ALL_THEMES.filter(t => t.id !== 'legacy');
-        const shuffled = [...candidates].sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 8);
-        
-        localStorage.setItem('shop-items', JSON.stringify(selected.map(s => s.id)));
-        localStorage.setItem('shop-reset-time', now.toString());
-        setShopItems(selected);
-        const nextReset = (Math.floor(now / ROTATION_MS) + 1) * ROTATION_MS;
-        setResetTime(nextReset);
-      } else {
-        const ids = JSON.parse(savedIds);
-        setShopItems(ALL_THEMES.filter(t => ids.includes(t.id)));
-        const nextReset = (Math.floor(lastReset / ROTATION_MS) + 1) * ROTATION_MS;
-        setResetTime(nextReset);
-      }
-    };
-
-    refreshShop();
-    const timer = setInterval(() => {
-      const remaining = resetTime - Date.now();
-      if (remaining <= 0) {
-        refreshShop();
-      } else {
-        const h = Math.floor(remaining / 3600000);
-        const m = Math.floor((remaining % 3600000) / 60000);
-        const s = Math.floor((remaining % 60000) / 1000);
-        setTimeLeft(`${h}H ${m}M ${s}S`);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [resetTime]);
 
   // Apply theme to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
     localStorage.setItem('microwave-theme', currentTheme);
-  }, [currentTheme]);
+
+    // Handle custom theme CSS variables
+    if (currentTheme.startsWith('custom-')) {
+      const theme = customThemes.find(t => t.id === currentTheme);
+      if (theme) {
+        document.documentElement.style.setProperty('--theme-brand', theme.color);
+        document.documentElement.style.setProperty('--theme-brand-dim', `${theme.color}1a`);
+        document.documentElement.style.setProperty('--theme-border', `${theme.color}33`);
+      }
+    } else {
+      // Reset for standard themes
+      document.documentElement.style.removeProperty('--theme-brand');
+      document.documentElement.style.removeProperty('--theme-brand-dim');
+      document.documentElement.style.removeProperty('--theme-border');
+    }
+  }, [currentTheme, customThemes]);
 
   // Enhance game data with layout properties for bento effect
   const displayGames = useMemo(() => {
@@ -219,27 +184,38 @@ export default function App() {
 
           <div className="hidden md:flex items-center gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-xl">
             <button
-              onClick={() => setActiveTab('GAMES')}
-              className={`px-6 py-2 text-[10px] font-mono font-bold tracking-[0.2em] rounded-lg transition-all flex items-center gap-2 ${
+              onClick={() => { setActiveTab('GAMES'); setActiveCategory('All'); }}
+              className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                 activeTab === 'GAMES'
                   ? 'bg-brand text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'
                   : 'text-white/40 hover:text-white hover:bg-white/5'
               }`}
+              title="Games"
             >
-              <Gamepad2 className="w-3 h-3" />
-              Games
+              <Gamepad2 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setActiveTab('CHAT')}
-              className={`px-6 py-2 text-[10px] font-mono font-bold tracking-[0.2em] rounded-lg transition-all flex items-center gap-2 ${
+              onClick={() => { setActiveTab('CHAT'); setActiveCategory('All'); }}
+              className={`p-3 rounded-lg transition-all flex items-center justify-center relative ${
                 activeTab === 'CHAT'
                   ? 'bg-brand text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'
                   : 'text-white/40 hover:text-white hover:bg-white/5'
               }`}
+              title="AI Chat"
             >
-              <MessageSquare className="w-3 h-3" />
-              AI Chat
-              <div className={`w-1 h-1 rounded-full bg-brand animate-pulse ${activeTab === 'CHAT' ? 'hidden' : 'block'}`} />
+              <MessageSquare className="w-4 h-4" />
+              <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand animate-pulse ${activeTab === 'CHAT' ? 'hidden' : 'block'}`} />
+            </button>
+            <button
+              onClick={() => { setActiveTab('MARKET'); setActiveCategory('STORE'); }}
+              className={`p-3 rounded-lg transition-all flex items-center justify-center ${
+                activeTab === 'MARKET'
+                  ? 'bg-brand text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/5'
+              }`}
+              title="Market"
+            >
+              <ShoppingCart className="w-4 h-4" />
             </button>
           </div>
 
@@ -248,32 +224,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div 
-              onClick={() => setShowCasino(true)}
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/10 rounded-full hover:bg-white/5 cursor-pointer transition-colors group"
-            >
-              <Coins className="w-3 h-3 text-brand group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] font-mono font-bold text-white uppercase tracking-widest leading-none group-hover:text-brand transition-colors">{bits.toLocaleString()} Bits</span>
-            </div>
-            <button 
-              onClick={() => setShowShop(true)}
-              className="p-2.5 bg-brand/10 border border-brand/20 rounded-full hover:bg-brand/20 transition-all group relative"
-            >
-               <ShoppingCart className="w-4 h-4 text-brand" />
-               <span className="absolute -top-1 -right-1 bg-white text-black text-[8px] font-bold px-1 rounded-sm">New</span>
-            </button>
             <button 
               onClick={() => setShowSettings(true)}
-              className="flex items-center gap-2 pl-4 pr-5 py-2.5 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all group shadow-lg active:scale-95"
+              className="p-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all group shadow-lg active:scale-95 flex items-center justify-center"
               title="Settings"
             >
                <Settings className="w-4 h-4 text-brand group-hover:rotate-90 transition-transform duration-500" />
-               <span className="text-[10px] font-mono font-bold text-white tracking-widest leading-none">Settings</span>
             </button>
-            <div className="h-8 w-px bg-white/10 mx-2" />
-            <div className="hidden lg:block">
-              <div className="text-xs font-mono font-bold text-brand uppercase">{currentTheme}</div>
-            </div>
           </div>
         </div>
       </nav>
@@ -467,6 +424,142 @@ export default function App() {
                 </div>
               )}
             </motion.div>
+          ) : activeTab === 'MARKET' ? (
+            <motion.div
+              key="market-view"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-6xl mx-auto"
+            >
+              <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-brand/10 border border-brand/20 rounded-2xl flex items-center justify-center">
+                    <ShoppingCart className="w-6 h-6 text-brand" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-4xl font-black uppercase tracking-tighter italic">MARKET & EDITOR</h2>
+                    <p className="text-xs font-mono text-white/40 uppercase tracking-widest leading-none">Accessing specialized interface styles</p>
+                  </div>
+                </div>
+                
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                  {['STORE', 'EDITOR', 'COMMUNITY'].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setActiveCategory(m)}
+                      className={`px-4 py-2 rounded-lg text-[10px] font-mono font-bold tracking-widest transition-all ${
+                        (activeCategory === m || (activeCategory === 'All' && m === 'STORE')) 
+                          ? 'bg-brand text-black shadow-lg shadow-brand/20' 
+                          : 'text-white/40 hover:text-white'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {activeCategory === 'EDITOR' ? (
+                <ThemeEditor onPublish={(theme) => {
+                  setCustomThemes(prev => [theme, ...prev]);
+                  setOwnedThemes(prev => [...prev, theme.id]);
+                  setActiveCategory('COMMUNITY');
+                }} />
+              ) : activeCategory === 'COMMUNITY' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {customThemes.length === 0 ? (
+                    <div className="col-span-full py-32 flex flex-col items-center justify-center text-center bento-card border-dashed">
+                      <Palette className="w-12 h-12 text-white/10 mb-4" />
+                      <p className="text-xs font-mono text-white/20 uppercase tracking-[0.2em]">No community styles detected</p>
+                      <button 
+                        onClick={() => setActiveCategory('EDITOR')}
+                        className="mt-6 text-brand text-[10px] font-bold uppercase tracking-widest hover:underline"
+                      >
+                        Launch Architect
+                      </button>
+                    </div>
+                  ) : (
+                    customThemes.map((theme, i) => (
+                      <motion.div
+                        key={theme.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`group relative flex flex-col p-8 bg-white/[0.03] border border-white/10 rounded-3xl hover:border-brand/40 transition-all cursor-pointer overflow-hidden ${currentTheme === theme.id ? 'border-brand/40 ring-1 ring-brand/20' : ''}`}
+                        onClick={() => setCurrentTheme(theme.id)}
+                      >
+                         <div className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 -translate-y-1/2 translate-x-1/2 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: theme.color }} />
+                         
+                          <div className="relative z-10 flex flex-col h-full text-white">
+                             <div className="w-12 h-12 rounded-xl border border-white/10 mb-6 flex items-center justify-center group-hover:rotate-12 transition-transform" style={{ backgroundColor: theme.color }}>
+                                {currentTheme === theme.id ? <CircleCheck className="w-6 h-6 text-black" /> : <Palette className="w-6 h-6 text-black/40" />}
+                             </div>
+  
+                             <div className="mb-6">
+                                <h3 className="font-display font-black uppercase tracking-tight text-xl mb-2">{theme.name}</h3>
+                                <p className="text-[10px] text-white/40 leading-relaxed italic line-clamp-2">{theme.desc}</p>
+                             </div>
+                            
+                            <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                               <span className="text-[9px] font-mono text-brand font-bold uppercase tracking-[0.2em]">STATION_LOADED</span>
+                               <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all leading-none ${
+                                 currentTheme === theme.id 
+                                   ? 'bg-brand text-black' 
+                                   : 'bg-white/5 text-white/40 group-hover:text-white'
+                               }`}>
+                                  {currentTheme === theme.id ? 'ACTIVE' : 'SYNC'}
+                               </div>
+                            </div>
+                         </div>
+                       </motion.div>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {ALL_THEMES.filter(t => ['encrypted', 'monochrome'].includes(t.id)).map((theme, i) => (
+                    <motion.div
+                      key={theme.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={`group relative flex flex-col p-8 bg-white/[0.03] border border-white/10 rounded-3xl hover:border-brand/40 transition-all cursor-pointer overflow-hidden ${ownedThemes.includes(theme.id) ? 'opacity-60' : ''}`}
+                      onClick={() => {
+                        if (ownedThemes.includes(theme.id)) return;
+                        setOwnedThemes(prev => [...prev, theme.id]);
+                      }}
+                    >
+                       {/* Preview Circle */}
+                       <div className="absolute top-0 right-0 w-48 h-48 blur-[80px] opacity-20 -translate-y-1/2 translate-x-1/2 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: theme.color }} />
+                       
+                        <div className="relative z-10 flex flex-col h-full text-white">
+                           <div className="w-16 h-16 rounded-2xl border-2 border-white/10 mb-8 flex items-center justify-center group-hover:scale-110 transition-transform" style={{ backgroundColor: theme.color }}>
+                              {ownedThemes.includes(theme.id) ? <CircleCheck className="w-8 h-8 text-black" /> : <Palette className="w-8 h-8 text-black/40" />}
+                           </div>
+  
+                           <div className="mb-8">
+                              <h3 className="font-display font-bold uppercase tracking-tight text-2xl mb-2">{theme.name}</h3>
+                              <p className="text-sm text-white/40 leading-relaxed italic">{theme.desc}</p>
+                           </div>
+                          
+                          <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
+                             <span className="text-xs font-mono text-brand font-bold uppercase tracking-widest">FREE ACCESS</span>
+                             <div className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all leading-none ${
+                               ownedThemes.includes(theme.id) 
+                                 ? 'bg-white/10 text-white/40' 
+                                 : 'bg-brand text-black'
+                             }`}>
+                                {ownedThemes.includes(theme.id) ? 'UNLOCKED' : 'DOWNLOAD'}
+                             </div>
+                          </div>
+                       </div>
+                     </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           ) : (
             <motion.div
               key="chat-view"
@@ -532,28 +625,24 @@ export default function App() {
 
                 {/* Content */}
                 <div className="flex-1 flex flex-col">
-                  <div className="p-8 border-b border-white/[0.05] flex items-center justify-between">
-                    <div>
-                      <h2 className="font-display text-3xl font-bold uppercase tracking-tight italic">Settings & Themes</h2>
-                      <p className="tech-label opacity-40 mt-1 uppercase tracking-widest">Manage your interface and account</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="px-3 py-1 bg-brand/10 border border-brand/20 rounded-full flex items-center gap-2">
-                        <Coins className="w-3 h-3 text-brand" />
-                        <span className="text-[10px] font-mono font-bold text-brand uppercase tracking-widest leading-none">{bits.toLocaleString()} Bits</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="font-display text-3xl font-bold uppercase tracking-tight italic">Settings & Themes</h2>
+                        <p className="tech-label opacity-40 mt-1 uppercase tracking-widest">Manage your interface and account</p>
                       </div>
-                      <button 
-                        onClick={() => setShowSettings(false)}
-                        className="p-3 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => setShowSettings(false)}
+                          className="p-3 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
                   <div className="overflow-y-auto p-8 no-scrollbar flex-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {ALL_THEMES.filter(t => ownedThemes.includes(t.id)).map((theme) => (
+                      {[...ALL_THEMES, ...customThemes].filter(t => ownedThemes.includes(t.id)).map((theme) => (
                         <button
                           key={theme.id}
                           onClick={() => setCurrentTheme(theme.id)}
@@ -612,121 +701,9 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Bit Games Modal Removed */}
 
-      {/* Theme Shop Modal */}
-      <AnimatePresence>
-        {showShop && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-surface/95 backdrop-blur-3xl overflow-hidden p-4 md:p-12"
-          >
-            <div className="absolute inset-0 tech-grid-pattern opacity-10" />
-            
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 30 }}
-              className="relative w-full max-w-7xl h-full flex flex-col bg-surface-soft border border-white/10 rounded-[var(--theme-roundness)] overflow-hidden shadow-2xl"
-            >
-              {/* Shop Header */}
-              <div className="p-8 border-b border-white/[0.05] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-gradient-to-r from-brand/10 to-transparent">
-                <div>
-                  <div className="flex items-center gap-2 mb-2 text-white">
-                    <ShoppingCart className="w-6 h-6 text-brand" />
-                    <h2 className="font-display text-4xl font-black uppercase tracking-tighter italic">MARKET</h2>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-black/40 rounded-full border border-white/10">
-                      <Clock className="w-3 h-3 text-brand" />
-                      <span className="text-[10px] font-mono font-bold text-brand uppercase tracking-widest leading-none">RESETS: {timeLeft}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-brand text-black rounded-full">
-                      <Coins className="w-3 h-3" />
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest leading-none">{bits.toLocaleString()} BITS</span>
-                    </div>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowShop(false)}
-                  className="p-4 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors self-end md:self-auto text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Shop Grid */}
-              <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {shopItems.map((theme, i) => (
-                    <motion.div
-                      key={theme.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className={`group relative flex flex-col p-6 bg-white/[0.03] border border-white/10 rounded-[var(--theme-roundness)] hover:border-brand/40 transition-all cursor-pointer overflow-hidden ${ownedThemes.includes(theme.id) ? 'opacity-50 grayscale' : ''}`}
-                      onClick={() => {
-                        if (ownedThemes.includes(theme.id)) return;
-                        if (bits >= theme.price) {
-                          setBits(prev => prev - theme.price);
-                          setOwnedThemes(prev => [...prev, theme.id]);
-                        } else {
-                          // Visual shake or notice could go here
-                        }
-                      }}
-                    >
-                       {/* Preview Circle */}
-                       <div className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 -translate-y-1/2 translate-x-1/2 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: theme.color }} />
-                       
-                        <div className="relative z-10 flex flex-col h-full text-white">
-                           <div className="w-12 h-12 rounded-[var(--theme-roundness)] border-2 border-white/10 mb-6 flex items-center justify-center group-hover:scale-110 transition-transform" style={{ backgroundColor: theme.color }}>
-                              {ownedThemes.includes(theme.id) ? <CircleCheck className="w-6 h-6 text-black" /> : <Palette className="w-6 h-6 text-black/40" />}
-                           </div>
-                          
-                          <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                             <div className="flex items-center gap-2">
-                                <Coins className="w-4 h-4 text-brand" />
-                                <span className="font-mono font-bold text-white group-hover:text-brand transition-colors leading-none">
-                                  {ownedThemes.includes(theme.id) ? 'OWNED' : `${theme.price} BITS`}
-                                </span>
-                             </div>
-                             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all leading-none ${
-                               ownedThemes.includes(theme.id) 
-                                 ? 'bg-white/10 text-white/40' 
-                                 : (bits >= theme.price ? 'bg-white/5 border border-white/10 text-white group-hover:bg-brand group-hover:text-black' : 'bg-red-500/20 text-red-500 border border-red-500/20')
-                             }`}>
-                                {ownedThemes.includes(theme.id) ? 'UNLOCKED' : (bits >= theme.price ? 'PURCHASE' : 'LOCKED')}
-                             </div>
-                          </div>
-                       </div>
-
-                     </motion.div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="p-8 border-t border-white/[0.05] flex justify-end items-center bg-black/20">
-                <div className="flex gap-4">
-                  <button className="px-8 py-3 border border-white/20 text-white font-black uppercase text-xs tracking-widest rounded-full hover:bg-white/5 transition-all leading-none">Support</button>
-                  <button onClick={() => setShowShop(false)} className="px-8 py-3 bg-white text-black font-black uppercase text-xs tracking-widest rounded-full hover:bg-brand transition-all leading-none">EXIT</button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Bit Games (Casino) Modal */}
-      <AnimatePresence>
-        {showCasino && (
-          <BitGames 
-            bits={bits} 
-            setBits={setBits} 
-            onClose={() => setShowCasino(false)} 
-          />
-        )}
-      </AnimatePresence>
 
       {/* Game Interface Modal */}
       <AnimatePresence>
