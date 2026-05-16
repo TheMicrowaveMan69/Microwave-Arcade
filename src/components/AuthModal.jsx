@@ -214,14 +214,17 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Toggling password visibility:', !showPassword);
                     setShowPassword(!showPassword);
                   }}
-                  className="absolute right-3 p-2 hover:bg-white/10 rounded-lg transition-all group z-20"
+                  className="absolute right-3 p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all group z-30 flex items-center justify-center cursor-pointer"
+                  style={{ minWidth: '40px', minHeight: '40px' }}
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5 text-white/40 group-hover:text-brand transition-colors" />
+                    <EyeOff className="w-5 h-5 text-brand" />
                   ) : (
-                    <Eye className="w-5 h-5 text-white/40 group-hover:text-brand transition-colors" />
+                    <Eye className="w-5 h-5 text-brand" />
                   )}
                 </button>
               </div>

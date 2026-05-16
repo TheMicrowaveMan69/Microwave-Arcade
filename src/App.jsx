@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -92,6 +92,7 @@ export default function App() {
   });
 
   const [communityThemes, setCommunityThemes] = useState([]);
+  const lastCloudData = useRef(null);
 
   // Fetch Community Themes
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function App() {
       const themes = snapshot.docs.map(doc => doc.data());
       setCommunityThemes(themes);
     }, (error) => {
-      console.error('Snapshot error:', error);
+      console.error('Community Themes Snapshot error:', error);
     });
     return () => unsubscribe();
   }, []);
@@ -111,6 +112,7 @@ export default function App() {
       setUser(u);
       if (!u) {
         setUserData(null);
+        lastCloudData.current = null;
       }
     });
     return () => unsubscribe();
@@ -123,9 +125,18 @@ export default function App() {
       if (snapshot.exists()) {
         const data = snapshot.data();
         setUserData(data);
-        if (data.ownedThemes) setOwnedThemes(data.ownedThemes);
-        if (data.customThemes) setCustomThemes(data.customThemes);
-        if (data.playCounts) setPlayCounts(data.playCounts);
+        lastCloudData.current = data; // Track what we got from cloud
+
+        // Only update local state if it differs from what we just got
+        if (data.ownedThemes) setOwnedThemes(prev => 
+          JSON.stringify(prev) === JSON.stringify(data.ownedThemes) ? prev : data.ownedThemes
+        );
+        if (data.customThemes) setCustomThemes(prev => 
+          JSON.stringify(prev) === JSON.stringify(data.customThemes) ? prev : data.customThemes
+        );
+        if (data.playCounts) setPlayCounts(prev => 
+          JSON.stringify(prev) === JSON.stringify(data.playCounts) ? prev : data.playCounts
+        );
       }
     });
     return () => unsubscribe();
@@ -147,24 +158,31 @@ export default function App() {
   // Local Save & Sync Logic
   useEffect(() => {
     localStorage.setItem('microwave-owned-themes', JSON.stringify(ownedThemes));
-    if (user && userData && JSON.stringify(userData.ownedThemes) !== JSON.stringify(ownedThemes)) {
+    
+    // Only push if local state has drifted from our latest cloud snapshot
+    const hasDrifted = !lastCloudData.current || JSON.stringify(lastCloudData.current.ownedThemes) !== JSON.stringify(ownedThemes);
+    if (user && hasDrifted) {
       syncToCloud({ ownedThemes });
     }
-  }, [ownedThemes, user, userData, syncToCloud]);
+  }, [ownedThemes, user, syncToCloud]);
 
   useEffect(() => {
     localStorage.setItem('microwave-custom-themes', JSON.stringify(customThemes));
-    if (user && userData && JSON.stringify(userData.customThemes) !== JSON.stringify(customThemes)) {
+    
+    const hasDrifted = !lastCloudData.current || JSON.stringify(lastCloudData.current.customThemes) !== JSON.stringify(customThemes);
+    if (user && hasDrifted) {
       syncToCloud({ customThemes });
     }
-  }, [customThemes, user, userData, syncToCloud]);
+  }, [customThemes, user, syncToCloud]);
 
   useEffect(() => {
     localStorage.setItem('microwave-play-counts', JSON.stringify(playCounts));
-    if (user && userData && JSON.stringify(userData.playCounts) !== JSON.stringify(playCounts)) {
+    
+    const hasDrifted = !lastCloudData.current || JSON.stringify(lastCloudData.current.playCounts) !== JSON.stringify(playCounts);
+    if (user && hasDrifted) {
       syncToCloud({ playCounts });
     }
-  }, [playCounts, user, userData, syncToCloud]);
+  }, [playCounts, user, syncToCloud]);
 
   // Apply theme to document
   useEffect(() => {

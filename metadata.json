@@ -2,5 +2,7 @@
   "name": "Microwave Arcade V2",
   "description": "The peak of digital entertainment. Microwave your boredom away.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
