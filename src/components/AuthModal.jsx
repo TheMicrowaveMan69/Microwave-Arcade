@@ -54,7 +54,7 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
     if (!username || !password) return;
     
     if (!validateUsername(username)) {
-      setError('Username must be 3-15 characters and contain only letters, numbers, or underscores.');
+      setError('Username must be 3-15 characters (letters, numbers, underscores)');
       return;
     }
     
@@ -69,21 +69,45 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
         onAuthSuccess(userCredential.user);
       } else {
         // Sign up
+        console.log('Starting signup for:', username);
         
-        // 1. Check if username is taken
+        // 1. Check if username is taken in Firestore first
         const usernameRef = doc(db, 'usernames', username.toLowerCase());
-        const usernameSnap = await getDoc(usernameRef);
+        let usernameSnap;
+        try {
+          usernameSnap = await getDoc(usernameRef);
+        } catch (e) {
+          console.error('Error checking username existence:', e);
+          // Fall through - if we can't read it, we might still try to create it and let rules handle it
+        }
         
-        if (usernameSnap.exists()) {
+        if (usernameSnap?.exists()) {
           setError('Username is already taken');
           setLoading(false);
           return;
         }
 
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // 2. Create Auth User
+        let userCredential;
+        try {
+          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        } catch (authErr) {
+          console.error('Firebase Auth error during signup:', authErr);
+          if (authErr.code === 'auth/email-already-in-use') {
+            setError('Username already taken');
+          } else if (authErr.code === 'auth/weak-password') {
+            setError('Password should be at least 6 characters');
+          } else {
+            setError('Authentication failed: ' + (authErr.message || 'unknown error'));
+          }
+          setLoading(false);
+          return;
+        }
+
         const user = userCredential.user;
+        console.log('Auth user created:', user.uid);
         
-        // 2. Claim username and create profile
+        // 3. Claim username and create profile
         const userDoc = {
           username: username,
           ownedThemes: ['legacy'],
@@ -93,29 +117,32 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
         };
 
         try {
-          // Claim username
+          console.log('Claiming username in Firestore...');
           await setDoc(usernameRef, { uid: user.uid, createdAt: serverTimestamp() });
-          // Create profile
+          
+          console.log('Creating user profile in Firestore...');
           await setDoc(doc(db, 'users', user.uid), userDoc);
-        } catch (err) {
-          handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
+          
+          onAuthSuccess(user);
+          onClose();
+        } catch (firestoreErr) {
+          console.error('Firestore initialization error:', firestoreErr);
+          // Cleanup: if profile creation fails, we might want to sign the user out so they don't appear logged in
+          await auth.signOut();
+          handleFirestoreError(firestoreErr, OperationType.WRITE, `users/${user.uid}`);
         }
-
-        onAuthSuccess(user);
       }
-      onClose();
     } catch (err) {
-      console.error('Auth error:', err);
+      console.error('Final auth catch block:', err);
+      if (error) return; // Already set a specific error
+      
       if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
         setError('Invalid username or password');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Username already taken');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password should be at least 6 characters');
       } else {
-        setError('Something went wrong. Try again.');
+        setError(err.message || 'Something went wrong. Try again.');
       }
     } finally {
+      if (!isLogin && !loading) return; // Prevent state update if we already finished
       setLoading(false);
     }
   };
@@ -173,8 +200,8 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
 
             <div className="space-y-2">
               <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest block ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+              <div className="relative flex items-center">
+                <Lock className="absolute left-4 w-4 h-4 text-white/20 z-10" />
                 <input 
                   type={showPassword ? "text" : "password"}
                   required
@@ -185,18 +212,21 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-lg transition-colors group"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPassword(!showPassword);
+                  }}
+                  className="absolute right-3 p-2 hover:bg-white/10 rounded-lg transition-all group z-20"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-white/20 group-hover:text-white/60" />
+                    <EyeOff className="w-5 h-5 text-white/40 group-hover:text-brand transition-colors" />
                   ) : (
-                    <Eye className="w-4 h-4 text-white/20 group-hover:text-white/60" />
+                    <Eye className="w-5 h-5 text-white/40 group-hover:text-brand transition-colors" />
                   )}
                 </button>
               </div>
               {!isLogin && (
-                <p className="text-[10px] font-mono text-white/20 ml-1">At least 6 characters</p>
+                <p className="text-[10px] font-mono text-white/20 ml-1">6+ characters required</p>
               )}
             </div>
           </div>
