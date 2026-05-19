@@ -13,6 +13,7 @@ export default function ChatInterface() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const selectedModel = MODELS[0];
+  const ModelIcon = selectedModel.icon;
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function ChatInterface() {
       <div className="p-4 border-b border-white/10 bg-white/[0.04] flex items-center justify-between relative z-20">
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
-            <selectedModel.icon className={`w-4 h-4 ${selectedModel.color}`} />
+            <ModelIcon className={`w-4 h-4 ${selectedModel.color}`} />
             <div className="text-left">
               <div className="text-[10px] font-mono text-white/40 leading-none mb-1 tracking-widest">{selectedModel.provider}</div>
               <div className="text-xs font-bold leading-none">{selectedModel.name}</div>
@@ -128,7 +129,7 @@ export default function ChatInterface() {
       >
         <div className="relative flex items-center gap-4">
           <div className="absolute left-4 opacity-40">
-            <selectedModel.icon className={`w-4 h-4 ${selectedModel.color}`} />
+            <ModelIcon className={`w-4 h-4 ${selectedModel.color}`} />
           </div>
           <input
             type="text"
