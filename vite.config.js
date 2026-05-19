@@ -13,7 +13,7 @@ export default defineConfig(({mode}) => {
     plugins: [react(), tailwindcss()],
     base: '/',
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || 'undefined'),
+      // API keys should be handled server-side via Cloudflare Functions
     },
     resolve: {
       alias: {

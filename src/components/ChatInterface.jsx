@@ -1,16 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Bot, User, Loader2, Trash2, Sparkles, ChevronDown, BrainCircuit } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
-
-// Initialize Gemini API
-const getAiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === 'undefined') {
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-};
 
 const MODELS = [
   { id: 'gemini', name: 'Gemini 3 Flash', provider: 'Google', icon: Sparkles, color: 'text-blue-400' },
@@ -49,34 +39,37 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
-      const ai = getAiClient();
-      if (!ai) {
-        throw new Error('AI service is currently unavailable. Please check your API configuration or set up the GEMINI_API_KEY environment variable.');
-      }
-      const modelIdentifier = "gemini-3-flash-preview"; 
-      
-      const response = await ai.models.generateContent({
-        model: modelIdentifier,
-        contents: newMessages.map(msg => ({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }],
-        })),
-        config: {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: newMessages,
+          model: "gemini-3-flash-preview",
           systemInstruction: `You are now operating as ${selectedModel.name} (${selectedModel.provider}). 
           Your goal is to provide high-quality, professional assistance. 
           Use standard sentence case. DO NOT use all caps. 
           Adopt a personality consistent with ${selectedModel.name}.
           Do not mention arcade themes or hacker styles.`,
-        }
+        }),
       });
 
-      const text = response.text;
-      if (text) {
-        setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.text) {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.text }]);
       }
     } catch (error) {
       console.error('Chat Error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Something went wrong. Please check your system configuration or try switching models.' }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Error: ${error.message}. Please verify your Cloudflare Pages environment variables (GEMINI_API_KEY).` 
+      }]);
     } finally {
       setIsLoading(false);
     }
