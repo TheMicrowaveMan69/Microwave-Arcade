@@ -4,25 +4,18 @@ import { Send, Bot, User, Loader2, Trash2, Sparkles, ChevronDown, BrainCircuit }
 
 const MODELS = [
   { id: 'gemini', name: 'Gemini 3 Flash', provider: 'Google', icon: Sparkles, color: 'text-blue-400' },
-  { id: 'gpt4', name: 'GPT-4o', provider: 'OpenAI', icon: BrainCircuit, color: 'text-green-400' },
-  { id: 'claude', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', icon: Bot, color: 'text-orange-400' },
 ];
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem('microwave-chat-history');
-    return saved ? JSON.parse(saved) : [
-      { role: 'assistant', content: 'Systems ready. I am your AI assistant for the Microwave Arcade. How can I assist with your gaming session today?' }
-    ];
-  });
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'Greeting. I am the Microwave AI. I am currently in maintenance mode while the Cloudflare backend is being configured. Please enjoy the games in the meantime!' }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
-  const [showModelMenu, setShowModelMenu] = useState(false);
+  const selectedModel = MODELS[0];
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    localStorage.setItem('microwave-chat-history', JSON.stringify(messages));
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -33,46 +26,18 @@ export default function ChatInterface() {
     if (!input.trim() || isLoading) return;
 
     const userMessage = { role: 'user', content: input.trim() };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: newMessages,
-          model: "gemini-3-flash-preview",
-          systemInstruction: `You are now operating as ${selectedModel.name} (${selectedModel.provider}). 
-          Your goal is to provide high-quality, professional assistance. 
-          Use standard sentence case. DO NOT use all caps. 
-          Adopt a personality consistent with ${selectedModel.name}.
-          Do not mention arcade themes or hacker styles.`,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.text) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.text }]);
-      }
-    } catch (error) {
-      console.error('Chat Error:', error);
+    // Simulated response for now
+    setTimeout(() => {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: `Error: ${error.message}. Please verify your Cloudflare Pages environment variables (GEMINI_API_KEY).` 
+        content: 'Backend connection pending. I am currently operating in limited offline mode. Full AI capabilities will be restored once the environment variables are deployed to Cloudflare.' 
       }]);
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const clearChat = () => {
@@ -86,58 +51,22 @@ export default function ChatInterface() {
       {/* Chat Header */}
       <div className="p-4 border-b border-white/10 bg-white/[0.04] flex items-center justify-between relative z-20">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <button 
-              onClick={() => setShowModelMenu(!showModelMenu)}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3 group"
-            >
-              <selectedModel.icon className={`w-4 h-4 ${selectedModel.color}`} />
-              <div className="text-left">
-                <div className="text-[10px] font-mono text-white/40 leading-none mb-1 tracking-widest">{selectedModel.provider}</div>
-                <div className="text-xs font-bold leading-none flex items-center gap-2">
-                  {selectedModel.name}
-                  <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${showModelMenu ? 'rotate-180' : ''}`} />
-                </div>
-              </div>
-            </button>
-
-            <AnimatePresence>
-              {showModelMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full left-0 mt-2 w-56 bg-surface-soft border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl z-50"
-                >
-                  {MODELS.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => {
-                        setSelectedModel(m);
-                        setShowModelMenu(false);
-                      }}
-                      className={`w-full p-4 flex items-center gap-4 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0 ${selectedModel.id === m.id ? 'bg-white/[0.03]' : ''}`}
-                    >
-                      <m.icon className={`w-4 h-4 ${m.color}`} />
-                      <div>
-                        <div className="text-[10px] font-mono text-white/40 leading-none mb-1">{m.provider}</div>
-                        <div className="text-xs font-bold">{m.name}</div>
-                      </div>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+            <selectedModel.icon className={`w-4 h-4 ${selectedModel.color}`} />
+            <div className="text-left">
+              <div className="text-[10px] font-mono text-white/40 leading-none mb-1 tracking-widest">{selectedModel.provider}</div>
+              <div className="text-xs font-bold leading-none">{selectedModel.name}</div>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-mono text-white/60 font-medium tracking-widest">Online</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            <span className="text-[10px] font-mono text-white/60 font-medium tracking-widest">Offline</span>
           </div>
           <button 
-            onClick={clearChat}
+            onClick={() => setMessages([{ role: 'assistant', content: 'Conversation cleared.' }])}
             className="p-2 text-white/40 hover:text-red-500 transition-colors bg-white/5 rounded-lg border border-white/10"
             title="Clear chat"
           >
