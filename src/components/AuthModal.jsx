@@ -43,18 +43,44 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const validateUsername = (name) => {
-    // Only allow letters, numbers, and underscores, between 3-15 chars
-    const regex = /^[a-zA-Z0-9_]{3,15}$/;
-    return regex.test(name);
+  const getUsernameValidationError = (name) => {
+    if (!name) return 'Username is required.';
+    if (name.length < 3 || name.length > 20) {
+      return 'Username must be between 3 and 20 characters.';
+    }
+    if (name.includes(' ')) {
+      return 'Username cannot contain spaces.';
+    }
+    
+    // Only allow letters, numbers, and underscores
+    const regex = /^[a-zA-Z0-9_]+$/;
+    if (!regex.test(name)) {
+      return 'Username can only contain letters, numbers, and underscores.';
+    }
+    
+    // Case-insensitive inappropriate word filtering
+    const bannedWords = [
+      'sex', 'fuck', 'bitch', 'ass', 'cunt', 'shit', 'whore', 'pussy', 'penis', 'vagina', 'dick', 'cock', 
+      'nigger', 'faggot', 'chink', 'kike', 'bastard'
+    ];
+    
+    const lowerName = name.toLowerCase();
+    for (const banned of bannedWords) {
+      if (lowerName.includes(banned)) {
+        return 'Username contains inappropriate words.';
+      }
+    }
+    
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) return;
     
-    if (!validateUsername(username)) {
-      setError('Username must be 3-15 characters (letters, numbers, underscores)');
+    const usernameError = getUsernameValidationError(username);
+    if (usernameError) {
+      setError(usernameError);
       return;
     }
     
