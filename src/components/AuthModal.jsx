@@ -123,6 +123,8 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
             setError('Username already taken');
           } else if (authErr.code === 'auth/weak-password') {
             setError('Password should be at least 6 characters');
+          } else if (authErr.code === 'auth/operation-not-allowed') {
+            setError('Email/Password provider is disabled in Firebase console. Please go to your Firebase Console -> Authentication -> Sign-in method, click "Add new provider", select "Email/Password" and enable it.');
           } else {
             setError('Authentication failed: ' + (authErr.message || 'unknown error'));
           }
@@ -164,8 +166,24 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
       
       if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
         setError('Invalid username or password');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/Password sign-in method is disabled in the Firebase Console. Go to Authentication -> Sign-in method, click Add provider, choose Email/Password, enable it and save.');
       } else {
-        setError(err.message || 'Something went wrong. Try again.');
+        // Attempt parsing our JSON Firestore Error
+        try {
+          const parsed = JSON.parse(err.message);
+          if (parsed && parsed.error) {
+            if (parsed.error.includes('PERMISSION_DENIED') || parsed.error.includes('insufficient permissions')) {
+              setError('Database security rules rejected user profile creation. Please ensure security rules are deployed properly in Firebase.');
+            } else {
+              setError(parsed.error);
+            }
+          } else {
+            setError(err.message || 'Something went wrong. Try again.');
+          }
+        } catch (_) {
+          setError(err.message || 'Something went wrong. Try again.');
+        }
       }
     } finally {
       if (!isLogin && !loading) return; // Prevent state update if we already finished
