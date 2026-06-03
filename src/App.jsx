@@ -19,20 +19,27 @@ import {
   Palette,
   Zap,
   Maximize,
-  MessageSquare,
-  User,
-  LogOut,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Flame,
+  Trophy,
+  Skull
 } from 'lucide-react';
 import gamesData from './data/games.json';
-import ChatInterface from './components/ChatInterface';
 import ThemeEditor from './components/ThemeEditor';
-import AuthModal from './components/AuthModal';
-import { auth, db } from './lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, collection, query, orderBy, limit } from 'firebase/firestore';
+import { db } from './lib/firebase';
+import { onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
 
-const CATEGORIES = ['All', 'Arcade', 'Puzzle', 'Strategy', 'Retro', 'Action'];
+const CATEGORY_ICONS = {
+  All: LayoutGrid,
+  Action: Flame,
+  Arcade: Gamepad2,
+  Strategy: Layers,
+  Sports: Trophy,
+  Puzzle: Activity,
+  Retro: Terminal,
+  Horror: Skull
+};
 
 const ALL_THEMES = [
   { id: 'legacy', name: 'Standard', color: '#f1f3f4', desc: 'Baseline system interface. Minimal overhead encryption.', price: 0, rarity: 'Standard' },
@@ -68,9 +75,21 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [showSettings, setShowSettings] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [showGenreMenu, setShowGenreMenu] = useState(false);
+  const genreDropdownRef = useRef(null);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target)) {
+        setShowGenreMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const [ownedThemes, setOwnedThemes] = useState(() => {
     const saved = localStorage.getItem('microwave-owned-themes');
@@ -92,7 +111,6 @@ export default function App() {
   });
 
   const [communityThemes, setCommunityThemes] = useState([]);
-  const lastCloudData = useRef(null);
 
   // Fetch Community Themes
   useEffect(() => {
@@ -106,83 +124,18 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (!u) {
-        setUserData(null);
-        lastCloudData.current = null;
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Data Sync Listener
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserData(data);
-        lastCloudData.current = data; // Track what we got from cloud
-
-        // Only update local state if it differs from what we just got
-        if (data.ownedThemes) setOwnedThemes(prev => 
-          JSON.stringify(prev) === JSON.stringify(data.ownedThemes) ? prev : data.ownedThemes
-        );
-        if (data.customThemes) setCustomThemes(prev => 
-          JSON.stringify(prev) === JSON.stringify(data.customThemes) ? prev : data.customThemes
-        );
-        if (data.playCounts) setPlayCounts(prev => 
-          JSON.stringify(prev) === JSON.stringify(data.playCounts) ? prev : data.playCounts
-        );
-      }
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  // Push to Cloud helper
-  const syncToCloud = useCallback(async (newData) => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        ...newData,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    } catch (error) {
-      console.error('Sync failed:', error);
-    }
-  }, [user]);
-
-  // Local Save & Sync Logic
+  // Local Save Logic
   useEffect(() => {
     localStorage.setItem('microwave-owned-themes', JSON.stringify(ownedThemes));
-    
-    // Only push if local state has drifted from our latest cloud snapshot
-    const hasDrifted = !lastCloudData.current || JSON.stringify(lastCloudData.current.ownedThemes) !== JSON.stringify(ownedThemes);
-    if (user && hasDrifted) {
-      syncToCloud({ ownedThemes });
-    }
-  }, [ownedThemes, user, syncToCloud]);
+  }, [ownedThemes]);
 
   useEffect(() => {
     localStorage.setItem('microwave-custom-themes', JSON.stringify(customThemes));
-    
-    const hasDrifted = !lastCloudData.current || JSON.stringify(lastCloudData.current.customThemes) !== JSON.stringify(customThemes);
-    if (user && hasDrifted) {
-      syncToCloud({ customThemes });
-    }
-  }, [customThemes, user, syncToCloud]);
+  }, [customThemes]);
 
   useEffect(() => {
     localStorage.setItem('microwave-play-counts', JSON.stringify(playCounts));
-    
-    const hasDrifted = !lastCloudData.current || JSON.stringify(lastCloudData.current.playCounts) !== JSON.stringify(playCounts);
-    if (user && hasDrifted) {
-      syncToCloud({ playCounts });
-    }
-  }, [playCounts, user, syncToCloud]);
+  }, [playCounts]);
 
   // Apply theme to document
   useEffect(() => {
@@ -211,6 +164,12 @@ export default function App() {
     return gamesData;
   }, []);
 
+  const dynamicCategories = useMemo(() => {
+    if (!displayGames || !Array.isArray(displayGames)) return ['All'];
+    const cats = new Set(displayGames.map(g => g.category).filter(Boolean));
+    return ['All', ...Array.from(cats).sort()];
+  }, [displayGames]);
+
   const filteredGames = useMemo(() => {
     return displayGames.filter(game => {
       const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -232,6 +191,15 @@ export default function App() {
       [game.id]: (prev[game.id] || 0) + 1
     }));
     setSelectedGame(game);
+  };
+
+  const getGameUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('https://securly.com.endue.gleeze.com/')) {
+      const remainingPath = url.replace('https://securly.com.endue.gleeze.com/', '');
+      return `/api/proxy/${remainingPath}`;
+    }
+    return url;
   };
 
   const toggleFullscreen = () => {
@@ -286,18 +254,6 @@ export default function App() {
               <Gamepad2 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => { setActiveTab('CHAT'); setActiveCategory('All'); }}
-              className={`p-3 rounded-lg transition-all flex items-center justify-center relative ${
-                activeTab === 'CHAT'
-                  ? 'bg-brand text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
-              }`}
-              title="AI Chat"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand animate-pulse ${activeTab === 'CHAT' ? 'hidden' : 'block'}`} />
-            </button>
-            <button
               onClick={() => { setActiveTab('MARKET'); setActiveCategory('STORE'); }}
               className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                 activeTab === 'MARKET'
@@ -315,28 +271,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {user ? (
-               <div 
-                 className="hidden lg:flex items-center gap-3 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl cursor-default"
-               >
-                 <div className="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center border border-brand/20">
-                   <User className="w-4 h-4 text-brand" />
-                 </div>
-                 <div className="flex flex-col">
-                   <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-none">Logged In</span>
-                   <span className="text-[11px] font-bold text-white tracking-tight leading-loose uppercase">{userData?.username || user.email.split('@')[0]}</span>
-                 </div>
-               </div>
-            ) : (
-              <button 
-                onClick={() => setShowAuth(true)}
-                className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-brand text-black rounded-xl hover:scale-[1.02] transition-all font-black uppercase text-[10px] tracking-widest"
-              >
-                <User className="w-4 h-4" />
-                Login
-              </button>
-            )}
-
             <button 
               onClick={() => setShowSettings(true)}
               className="p-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all group shadow-lg active:scale-95 flex items-center justify-center"
@@ -450,94 +384,157 @@ export default function App() {
               </div>
 
 
-              {/* Categories & Search Bar */}
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-12 border-b border-white/[0.05] pb-8">
-                <div className="flex flex-col md:flex-row items-center gap-6 w-full lg:w-auto">
-                  <div className="flex items-center gap-1.5 p-1 bg-white/[0.03] border border-white/10 rounded-xl overflow-x-auto no-scrollbar max-w-full">
-                    {CATEGORIES.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`px-6 py-2.5 text-xs font-mono tracking-[0.1em] rounded-lg transition-all ${
-                          activeCategory === cat 
-                            ? 'bg-brand text-black font-black' 
-                            : 'text-white/40 hover:text-white hover:bg-white/[0.05]'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+              {/* Categories & Search Bar Header */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10 border-b border-white/[0.05] pb-8">
+                <div>
+                  <h2 className="font-display text-4xl font-black uppercase tracking-tighter italic">
+                    ARCADE <span className="text-brand">MODULE</span>
+                  </h2>
+                  <p className="text-xs font-mono text-white/40 uppercase tracking-widest leading-none mt-2">
+                    Select a localized program to initialize core execution
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  {/* Genre Dropdown Menu */}
+                  <div className="relative" ref={genreDropdownRef}>
+                    <button 
+                      onClick={() => setShowGenreMenu(!showGenreMenu)}
+                      className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border font-mono text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                        showGenreMenu 
+                          ? 'bg-brand/10 border-brand/40 text-brand' 
+                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white hover:border-white/20 hover:bg-white/[0.06]'
+                      }`}
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                      <span>{activeCategory}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showGenreMenu ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {showGenreMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 sm:left-0 mt-2 w-64 bg-[#0d0f12] border border-white/10 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden"
+                        >
+                          <div className="text-[10px] font-mono tracking-widest text-white/30 uppercase mb-3 border-b border-white/[0.05] pb-2 flex justify-between items-center">
+                            <span>GENRE MATRIX</span>
+                            <span>{dynamicCategories.length} TOTAL</span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+                            {dynamicCategories.map((cat) => {
+                              const count = cat === 'All' 
+                                ? displayGames.length 
+                                : displayGames.filter(g => g.category === cat).length;
+                                
+                              const isActive = activeCategory === cat;
+                              const IconComponent = CATEGORY_ICONS[cat] || Gamepad2;
+
+                              return (
+                                <button
+                                  key={cat}
+                                  onClick={() => {
+                                    setActiveCategory(cat);
+                                    setShowGenreMenu(false);
+                                  }}
+                                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all text-xs font-mono tracking-wider w-full cursor-pointer ${
+                                    isActive 
+                                      ? 'bg-brand/15 border-brand/35 text-brand font-black' 
+                                      : 'bg-transparent border-transparent text-white/50 hover:bg-white/[0.03] hover:text-white'
+                                  }`}
+                                >
+                                  <div className={`p-1 rounded-lg transition-transform ${isActive ? 'bg-brand/20 text-brand scale-110' : 'bg-white/5 text-white/40'}`}>
+                                    <IconComponent className="w-3 h-3" />
+                                  </div>
+                                  <span className="flex-1 truncate uppercase">{cat}</span>
+                                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-normal ${isActive ? 'bg-brand/20 text-brand' : 'bg-white/5 text-white/30'}`}>
+                                    {count}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  <div className="relative w-full md:w-64">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20" />
+                  <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                     <input 
                       type="text" 
-                      placeholder="Search arcade..."
+                      placeholder="Search simulation name..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-10 py-2.5 text-xs font-mono focus:outline-none focus:border-brand/40 transition-all text-white"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-11 py-3 text-xs font-mono focus:outline-none focus:border-brand/40 transition-all text-white placeholder-white/20"
                     />
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-4 text-xs font-mono opacity-40">
-                   <span>Games: {filteredGames.length}</span>
-                </div>
               </div>
 
-              {/* Uniform Games Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                <AnimatePresence mode="popLayout">
-                  {filteredGames.map((game, idx) => (
-                    <motion.div
-                      key={game.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ delay: idx * 0.02 }}
-                      onClick={() => handlePlayGame(game)}
-                      className="group cursor-pointer flex flex-col"
-                    >
-                      <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/10 mb-3 group-hover:border-brand/40 transition-all shadow-lg group-hover:shadow-brand/5">
-                        <img 
-                          src={game.thumbnail} 
-                          alt={game.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />
-                      </div>
-                      
-                      <div className="px-1">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <h3 className="font-display font-medium tracking-tight text-white/80 group-hover:text-brand leading-tight text-xs sm:text-sm transition-colors line-clamp-1">
-                            {game.title}
-                          </h3>
-                          <span className="text-[9px] font-mono text-white/20 group-hover:text-brand/40 transition-colors uppercase whitespace-nowrap">
-                            {playCounts[game.id] || 0}
-                          </span>
+              {/* Full-width Grid with active selection header */}
+              <div className="w-full">
+                <div className="mb-6 flex items-center justify-between border-b border-white/[0.03] pb-4">
+                  <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">
+                    ACTIVE SELECTION // {activeCategory} ({filteredGames.length} SIMULATIONS FOUND)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                  <AnimatePresence mode="popLayout">
+                    {filteredGames.map((game, idx) => (
+                      <motion.div
+                        key={game.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ delay: idx * 0.02 }}
+                        onClick={() => handlePlayGame(game)}
+                        className="group cursor-pointer flex flex-col"
+                      >
+                        <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/10 mb-3 group-hover:border-brand/40 transition-all duration-300 shadow-lg group-hover:shadow-brand/5">
+                          <img 
+                            src={game.thumbnail} 
+                            alt={game.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-500" />
                         </div>
-                        <p className="text-[10px] font-mono text-white/20 group-hover:text-brand/40 transition-colors uppercase tracking-widest leading-none">
-                          {game.category}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {filteredGames.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-40 bento-card bg-transparent border-dashed">
-                  <div className="p-4 bg-white/5 rounded-full mb-6">
-                    <Search className="w-8 h-8 text-white/20" />
-                  </div>
-                  <p className="font-mono text-xs tracking-[0.3em] opacity-40">No matching titles</p>
+                        
+                        <div className="px-1">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <h3 className="font-display font-medium tracking-tight text-white/80 group-hover:text-brand leading-tight text-xs sm:text-sm transition-colors duration-300 line-clamp-1">
+                              {game.title}
+                            </h3>
+                            <span className="text-[9px] font-mono text-white/20 group-hover:text-brand/40 transition-colors duration-300 uppercase whitespace-nowrap">
+                              {playCounts[game.id] || 0}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-mono text-white/20 group-hover:text-brand/40 transition-colors duration-300 uppercase tracking-widest leading-none">
+                            {game.category}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
-              )}
+
+                {filteredGames.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-32 rounded-2xl border border-dashed border-white/10 bg-white/[0.01]">
+                    <div className="p-4 bg-white/5 rounded-full mb-4">
+                      <Search className="w-6 h-6 text-white/20" />
+                    </div>
+                    <p className="font-mono text-xs tracking-[0.2em] opacity-40">NO CONCURRENT SIMULATIONS</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
-          ) : activeTab === 'MARKET' ? (
+          ) : (
             <motion.div
               key="market-view"
               initial={{ opacity: 0, y: 10 }}
@@ -684,17 +681,6 @@ export default function App() {
                 </div>
               )}
             </motion.div>
-          ) : (
-            <motion.div
-              key="chat-view"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-4xl mx-auto"
-            >
-              <ChatInterface />
-            </motion.div>
           )}
         </AnimatePresence>
       </main>
@@ -718,19 +704,6 @@ export default function App() {
             </div>
          </div>
       </footer>
-
-      {/* Auth Modal */}
-      <AnimatePresence>
-        {showAuth && (
-          <AuthModal 
-            onClose={() => setShowAuth(false)} 
-            onAuthSuccess={(u) => {
-              setUser(u);
-              setShowAuth(false);
-            }} 
-          />
-        )}
-      </AnimatePresence>
 
       {/* Settings Modal */}
       <AnimatePresence>
@@ -768,20 +741,7 @@ export default function App() {
                      </button>
                   </div>
 
-                  {user && (
-                    <div className="mt-auto pt-8">
-                       <button 
-                        onClick={() => {
-                          signOut(auth);
-                          setShowSettings(false);
-                        }}
-                        className="w-full flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 hover:bg-red-500/20 transition-all text-[10px] font-bold uppercase tracking-widest"
-                       >
-                         <LogOut className="w-4 h-4" />
-                         Logout
-                       </button>
-                    </div>
-                  )}
+
                 </div>
 
                 {/* Content */}
@@ -929,7 +889,7 @@ export default function App() {
               <div className="flex-1 bg-black relative">
                 <iframe 
                   id="game-iframe"
-                  src={selectedGame.url} 
+                  src={getGameUrl(selectedGame.url)} 
                   className="w-full h-full border-none shadow-[0_0_100px_rgba(0,0,0,0.5)]"
                   title={selectedGame.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

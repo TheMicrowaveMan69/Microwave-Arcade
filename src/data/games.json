@@ -22,5 +22,61 @@
     "description": "Brotato is a top-down arena shooter roguelite where you play a potato wielding up to 6 weapons at a time to fight off swarms of aliens.",
     "thumbnail": "https://i.ibb.co/Tq2c5S4C/images.jpg",
     "url": "/brotato.html"
+  },
+  {
+    "id": "geometry-dash",
+    "title": "Geometry Dash",
+    "category": "Arcade",
+    "description": "Jump and fly your way through danger in this rhythm-based action platformer! Tap to jump, navigate spikes, and complete levels.",
+    "thumbnail": "https://i.ibb.co/B1wJxj2/Geometry-Dash-Icon.jpg",
+    "url": "/filestorage/gn/785.html"
+  },
+  {
+    "id": "plague-inc",
+    "title": "Plague Inc.",
+    "category": "Strategy",
+    "description": "Can you infect the world? Create and evolve a deadly pathogen to wipe out humanity while adapting against human defenses.",
+    "thumbnail": "https://i.ibb.co/jkHjtzfd/unnamed-1.png",
+    "url": "/filestorage/gn/805.html"
+  },
+  {
+    "id": "cheese-rolling",
+    "title": "Cheese Rolling",
+    "category": "Sports",
+    "description": "Race down the steep hill, rolling and tumbling, to catch the glorious wheel of Double Gloucester cheese before anyone else!",
+    "thumbnail": "https://i.ibb.co/zHJmYr6B/untitled-1-1767290877734.png",
+    "url": "/filestorage/gn/762.html"
+  },
+  {
+    "id": "fnaf",
+    "title": "Five Nights at Freddy's",
+    "category": "Horror",
+    "description": "Can you survive five nights of terror guard duty at Freddy Fazbear's Pizza while tracking rogue animatronic characters on security feeds?",
+    "thumbnail": "/filestorage/photos/fnaf.png",
+    "url": "/filestorage/gd/fnaf/index.html"
+  },
+  {
+    "id": "fnaf-2",
+    "title": "Five Nights at Freddy's 2",
+    "category": "Horror",
+    "description": "Welcome back to the new and improved Freddy Fazbear's Pizza! Can you survive your night shift with a new cast of animatronic characters?",
+    "thumbnail": "/filestorage/photos/fnaf-2.png",
+    "url": "/fnaf-2.html"
+  },
+  {
+    "id": "fnaf-3",
+    "title": "Five Nights at Freddy's 3",
+    "category": "Horror",
+    "description": "Thirty years after Freddy Fazbear's Pizza closed, a new attraction opens. Survive the night guarding Fazbear's Fright from a single real animatronic: Springtrap.",
+    "thumbnail": "/filestorage/photos/fnaf-3.png",
+    "url": "/fnaf-3.html"
+  },
+  {
+    "id": "fnaf-4",
+    "title": "Five Nights at Freddy's 4",
+    "category": "Horror",
+    "description": "This time, the terror has followed you home. Protect yourself against Nightmare Freddy, Bonnie, Chica, Foxy, and worse things lurking in the shadows of your bedroom.",
+    "thumbnail": "/filestorage/photos/fnaf-4.png",
+    "url": "/fnaf-4.html"
   }
 ]
